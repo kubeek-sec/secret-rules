@@ -1,0 +1,49 @@
+rules:
+  - name: Shortcut API Token
+    id: kingfisher.shortcut.1
+    pattern: |
+      (?x)
+      \b
+      (?i:shortcut|clubhouse)
+      (?:.|[\n\r]){0,32}?
+      (?i:TOKEN|API)
+      (?:.|[\n\r]){0,32}?
+      \b
+      (
+        [0-9a-f]{8}
+        -
+        [0-9a-f]{4}
+        -
+        [0-9a-f]{4}
+        -
+        [0-9a-f]{4}
+        -
+        [0-9a-f]{12}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 4
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'SHORTCUT_API_TOKEN="62dc7d80-a1b2-4c3d-8e5f-6a7b8c9d0e1f"'
+      - |
+        clubhouse_token = '0a1b2c3d-4e5f-6789-abcd-ef0123456789'
+    negative_examples:
+      - 'SHORTCUT_URL="https://app.shortcut.com"'
+    references:
+      - https://developer.shortcut.com/api/rest/v3
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://api.app.shortcut.com/api/v3/member
+          headers:
+            Shortcut-Token: '{{ TOKEN }}'
+            Content-Type: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid

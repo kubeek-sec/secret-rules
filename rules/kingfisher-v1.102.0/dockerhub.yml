@@ -1,0 +1,103 @@
+rules:
+  - name: Docker Hub Personal Access Token
+    id: kingfisher.dockerhub.1
+    pattern: |
+      (?xi)
+      \b
+      (
+        dckr_pat_[A-Z0-9_-]{27}
+      )
+      (?: $ | [^A-Z0-9_-] )
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.3
+    confidence: medium
+    examples:
+      - docker login -u gemesa -p dckr_pat_hc8VxYclixyTr2rDFsa2rqzkP3Y
+      - docker login -u gemesa -p dckr_pat_tkzBYxjNNC3R_Yg6jd_O-G8FbrJ
+      - docker login -u gemesa -p dckr_pat_1q8yKET1VDJTpfCwseUDzT8vFh-
+    references:
+      - https://docs.docker.com/reference/api/hub/latest/#tag/authentication-api/operation/AuthCreateAccessToken
+    depends_on_rule:
+      - rule_id: kingfisher.dockerhub.2
+        variable: DOCKER_USERNAME
+    validation:
+      type: Http
+      content:
+        request:
+          method: POST
+          url: https://hub.docker.com/v2/auth/token
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          body: '{"identifier":"{{ DOCKER_USERNAME | json_escape }}","secret":"{{ TOKEN | json_escape }}"}'
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: WordMatch
+              words:
+                - '"access_token"'
+
+  - name: Docker Hub Username
+    id: kingfisher.dockerhub.2
+    pattern: |
+      (?xi)
+      \b
+      docker
+      (?:.|[\n\r]){0,32}?
+      (?:
+        -u\s+
+        | --username[=\s]+
+        | user(?:name)?[=:\s]+["']?
+      )
+      (
+        [a-z0-9][a-z0-9_-]{2,29}
+      )
+      \b
+    min_entropy: 1.0
+    confidence: medium
+    visible: false
+    examples:
+      - docker login -u gemesa -p dckr_pat_xxx
+      - docker login --username=myuser
+      - DOCKER_USERNAME=myuser
+      - 'docker_user: "myuser"'
+
+  - name: Docker Hub Organization Access Token
+    id: kingfisher.dockerhub.3
+    pattern: |
+      (?xi)
+      \b
+      (
+        dckr_oat_[A-Z0-9_-]{32}
+      )
+      (?: $ | [^A-Z0-9_-] )
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.3
+    confidence: medium
+    examples:
+      - docker login -u docker-test -p dckr_oat_7bA9zRt5-JqX3vP0l_MnY8sK2wE-dF6h
+    references:
+      - https://docs.docker.com/enterprise/security/access-tokens/
+    depends_on_rule:
+      - rule_id: kingfisher.dockerhub.2
+        variable: DOCKER_USERNAME
+    validation:
+      type: Http
+      content:
+        request:
+          method: POST
+          url: https://hub.docker.com/v2/auth/token
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          body: '{"identifier":"{{ DOCKER_USERNAME | json_escape }}","secret":"{{ TOKEN | json_escape }}"}'
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: WordMatch
+              words:
+                - '"access_token"'

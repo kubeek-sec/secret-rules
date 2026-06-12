@@ -1,0 +1,26 @@
+[project]
+name = "secret-rules"
+version = "0.1.0"
+description = "Unified referential and config generator for secrets scanners"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pyyaml>=6.0.3",
+    "tomli-w>=1.2.0",
+]
+
+[project.scripts]
+secret-rules = "secret_rules.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.10"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "secret_rules"
+module-root = ""
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]

@@ -1,0 +1,60 @@
+rules:
+  - name: LaunchDarkly Access Token
+    id: kingfisher.launchdarkly.1
+    base_score: 70
+    pattern: |
+      (?xi)
+      launchdarkly
+      (?:.|[\n\r]){0,32}?
+      \b
+      (
+        [a-z0-9_\-=]{40}
+      )
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.2
+    confidence: medium
+    examples:
+      - LAUNCHDARKLY_TOKEN=api-123abc456def789ghi012jkl345mno678pqr
+      - '"launchdarkly": "ld-abcdefghijklmno1234567890pqrstuvwxzab"'
+    references:
+      - https://docs.launchdarkly.com/sdk/api/
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://app.launchdarkly.com/api/v2/members
+          headers:
+            Authorization: '{{ TOKEN }}'
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status:
+                - 200
+
+  - name: LaunchDarkly Client-side ID
+    id: kingfisher.launchdarkly.2
+    base_score: 15
+    pattern: |
+      (?xi)
+      ["']?(?:LD|LAUNCHDARKLY)[_-]?CLIENT[_-]?(?:SIDE[_-]?)?ID["']?
+      \s*[":=]\s*["']?
+      (
+        [a-f0-9]{24}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 6
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - LD_CLIENT_SIDE_ID=0123456789abcdef01234567
+      - LAUNCHDARKLY_CLIENT_ID="abcdef0123456789abcdef01"
+      - '"LD_CLIENT_SIDE_ID":"0123456789abcdef01234567"'
+    negative_examples:
+      - LD_CLIENT_SIDE_ID=not_valid_hex_id
+      - LAUNCHDARKLY_CLIENT_ID=tooshort
+    references:
+      - https://docs.launchdarkly.com/sdk/client-side/javascript

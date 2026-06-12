@@ -1,0 +1,59 @@
+rules:
+
+- name: Iterable API Key
+  id: np.iterable.1
+  base_score: 60
+
+  # Key format evidence:
+  #   - Census/Fivetran docs state 32 characters
+  #   - Segment docs show a real key that is 34 characters (42f187310705012194bd0bd694905664ae)
+  #   - No SDK performs format validation; keys are treated as opaque strings
+  #   - No major scanner (TruffleHog, Gitleaks, GitHub) has an Iterable-specific detector
+  #   - Character set appears lowercase hex from the single documented example,
+  #     but kept as full alphanumeric [a-z0-9] + (?i) since we cannot verify from one sample
+  #   - Length range {32,36} covers both documented lengths with small buffer
+  #   - Previous regex [A-Za-z0-9]{32,64} was overly broad, matching 40-64 char strings
+  #     that have no evidence of being valid Iterable keys
+  pattern: |
+    (?xi)
+    (?:iterable)
+    (?:.|[\n\r]){0,32}?
+    (?:KEY|TOKEN|SECRET|API)
+    (?:.|[\n\r]){0,16}?
+    \b
+    (?P<key>
+      [a-z0-9]{32,36}
+    )
+    \b
+
+  pattern_requirements:
+    min_digits: 3
+  min_entropy: 3.5
+  confidence: medium
+
+  categories:
+  - api
+  - secret
+
+  examples:
+  - "ITERABLE_API_KEY=a3b8f29e4d1c6a0578e23d9f41b6c8e2"
+  # 34-char key sourced from Segment Iterable destination docs
+  - 'iterable_api_key: "42f187310705012194bd0bd694905664ae"'
+  - "export ITERABLE_KEY=9F4B2D7E1A3C8056D2E7F1B94A6C3D80"
+  - "ITERABLE_SECRET=e7d2a1f849c3b05d6e81f2a794c3d5b0ab"
+
+  negative_examples:
+  - "ITERABLE_API_KEY=abcdef1234"
+  - "iterable_api_key=your-key-here"
+  - "ITERABLE_API_KEY=00000000000000000000000000000000"
+  - "iterable_api_key=a3b8f29e4d1c6a05"
+
+  description: |
+    Iterable API Key used for marketing automation platform access.
+    An attacker with this credential can send emails and push notifications,
+    access user profile data, manage campaigns and workflows, export
+    subscriber lists, and modify audience segments via the Iterable API.
+
+  references:
+  - https://api.iterable.com/api/docs
+  - https://support.iterable.com/hc/en-us/articles/360043464871-API-Keys

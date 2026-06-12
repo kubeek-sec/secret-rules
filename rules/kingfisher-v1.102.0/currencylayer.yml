@@ -1,0 +1,41 @@
+rules:
+  - name: Currencylayer API Key
+    id: kingfisher.currencylayer.1
+    pattern: |
+      (?xi)
+      \b
+      currencylayer
+      (?:.|[\n\r]){0,16}?
+      (?:SECRET|PRIVATE|ACCESS|KEY|TOKEN)
+      (?:.|[\n\r]){0,16}?
+      \b
+      (
+        [A-Za-z0-9]{32}
+      )
+      \b
+    min_entropy: 3.5
+    confidence: medium
+    pattern_requirements:
+      min_digits: 2
+    examples:
+      - CURRENCYLAYER_ACCESS_KEY=abc123def456ghi789jkl012mno345pq
+      - currencylayer_access_key = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+    references:
+      - https://currencylayer.com/documentation
+      - https://currencylayer.com/api-access
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://api.currencylayer.com/live?access_key={{ TOKEN }}
+          headers:
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: StatusMatch
+              status: [401]
+              negative: true
+            - type: JsonValid

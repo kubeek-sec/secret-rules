@@ -1,0 +1,36 @@
+rules:
+  - name: Pollinations Secret Key
+    id: kingfisher.pollinations.1
+    pattern: |
+      (?x)
+      \b
+      (
+        plln_sk_[a-zA-Z0-9]{24,48}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 1
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'POLLINATIONS_KEY=plln_sk_a1B2c3D4e5F6g7H8i9J0k1L2'
+    references:
+      - https://pollinations.ai/pricing
+
+  - name: Pollinations Publishable Key
+    id: kingfisher.pollinations.2
+    pattern: |
+      (?x)
+      \b
+      (
+        plln_pk_[a-zA-Z0-9]{24,48}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 1
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'POLLINATIONS_PUBLIC_KEY=plln_pk_a1B2c3D4e5F6g7H8i9J0k1L2'
+    references:
+      - https://pollinations.ai/pricing

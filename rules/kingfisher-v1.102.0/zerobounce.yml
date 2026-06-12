@@ -1,0 +1,38 @@
+rules:
+  - name: ZeroBounce API Key
+    id: kingfisher.zerobounce.1
+    pattern: |
+      (?xi)
+      \b
+      zerobounce
+      (?:.|[\n\r]){0,16}?
+      (?:SECRET|PRIVATE|ACCESS|KEY|TOKEN)
+      (?:.|[\n\r]){0,16}?
+      \b
+      (
+        [A-Za-z0-9]{32}
+      )
+      \b
+    min_entropy: 3.5
+    confidence: medium
+    pattern_requirements:
+      min_digits: 2
+    examples:
+      - zerobounce_api_key = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+      - ZEROBOUNCE_KEY=abcdef1234567890abcdef1234567890
+    references:
+      - https://www.zerobounce.net/docs/email-validation-api-quickstart/
+      - https://api.zerobounce.net/v2/validate
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://api.zerobounce.net/v2/validate?api_key={{ TOKEN }}&email=test@example.com&ip_address=
+          headers:
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid

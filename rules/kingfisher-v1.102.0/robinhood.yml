@@ -1,0 +1,21 @@
+rules:
+  - name: Robinhood Crypto API Key
+    id: kingfisher.robinhood.1
+    pattern: |
+      (?x)
+      \b
+      (
+        rh-api-
+        [0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 4
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'ROBINHOOD_API_KEY=rh-api-a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+      - 'rh_api_key: "rh-api-12345678-abcd-ef01-2345-6789abcdef01"'
+    references:
+      - https://docs.robinhood.com/crypto/trading/
+    # No validation: Robinhood Crypto requests require an API key plus Ed25519 request signing.

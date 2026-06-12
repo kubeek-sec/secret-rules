@@ -1,0 +1,18 @@
+rules:
+  - name: Klaviyo API Key
+    id: kingfisher.klaviyo.1
+    base_score: 60
+    pattern: |
+      (?xi)
+      \b
+      klaviyo
+      (?:.|[\n\r]){0,16}?
+      \b
+      (?P<token>
+        pk_[A-Z0-9]{34}
+      )
+      \b
+    min_entropy: 3.3
+    confidence: medium
+    examples:
+      - klaviyo_key = pk_abcd1234fghij5678klmn9012opqr3456s

@@ -1,0 +1,21 @@
+rules:
+  - name: VolcEngine Access Key ID
+    id: kingfisher.volcengine.1
+    pattern: |
+      (?x)
+      \b
+      (?i:volcengine)
+      (?:.|[\n\r]){0,32}?
+      \b
+      (
+        AKLT[a-zA-Z0-9_-]{46,48}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 4
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'VOLCENGINE_ACCESS_KEY=AKLTY2IwOGJIMTdiZmI5NGU1MWFiNWE3MWJkNWY2MDdmOGUxYz'
+    references:
+      - https://www.volcengine.com/docs/6291/65568

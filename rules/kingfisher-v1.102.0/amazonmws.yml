@@ -1,0 +1,26 @@
+rules:
+  - name: Amazon MWS Auth Token
+    id: kingfisher.amazonmws.1
+    pattern: |
+      (?x)
+      \b
+      (
+        amzn\.mws\.
+        [0-9a-f]{8}
+        -[0-9a-f]{4}
+        -[0-9a-f]{4}
+        -[0-9a-f]{4}
+        -[0-9a-f]{12}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 4
+    min_entropy: 3.0
+    confidence: high
+    examples:
+      - "MWSAuthToken => amzn.mws.59f4e074-c605-f328-4c6e-63af34120fc6"
+      - "AMAZON_MWS_AUTH_TOKEN=amzn.mws.7b2df085-d716-b439-6c6f-75ae45231bd7"
+    references:
+      - https://developer-docs.amazon.com/sp-api/docs
+    # No public validation endpoint: Amazon MWS tokens are validated
+    # through the SP-API which requires a full Selling Partner API auth flow.

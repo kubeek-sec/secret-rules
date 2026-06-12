@@ -1,0 +1,35 @@
+rules:
+  - name: Block Protocol API Key
+    id: kingfisher.blockprotocol.1
+    pattern: |
+      (?x)
+      \b
+      (
+        b10ck5\.[a-zA-Z0-9]{32}\.[a-zA-Z0-9]{36}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.5
+    confidence: high
+    categories: [api, key]
+    examples:
+      - 'BLOCK_PROTOCOL_API_KEY=b10ck5.AbCdEfGhIjKlMnOpQrStUvWxYz123456.AbCdEfGhIjKlMnOpQrStUvWxYz1234567890'
+    references:
+      - https://blockprotocol.org/docs/hub/api
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://blockprotocol.org/api/blocks
+          headers:
+            x-api-key: "{{ TOKEN }}"
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid
+    # No programmatic revocation endpoint is documented; Block Protocol
+    # directs users to revoke keys from the Account > API Keys page.

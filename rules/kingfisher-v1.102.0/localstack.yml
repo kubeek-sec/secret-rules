@@ -1,0 +1,20 @@
+rules:
+  - name: LocalStack Simulated AWS Access Key
+    id: kingfisher.localstack.1
+    pattern: |
+      (?x)
+      \b
+      (
+        (?:LSIA|LKIA)[A-Z0-9]{16,}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+      min_uppercase: 4
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'AWS_ACCESS_KEY_ID=LSIAQAAAAAAVNCBMPN59'
+      - 'aws_access_key=LKIAQAAAAAAVNCBMPN59'
+    references:
+      - https://docs.localstack.cloud/aws/capabilities/config/credentials/

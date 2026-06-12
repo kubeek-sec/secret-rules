@@ -1,0 +1,25 @@
+rules:
+  - name: IBM Cloud User API Key
+    id: kingfisher.ibm.1
+    base_score: 85
+    pattern: |
+      (?xi)
+      \b
+      (?:ibm(?:cloud)?|bx)
+      (?:.|[\n\r]){0,32}?
+      (?:SECRET|PRIVATE|ACCESS|KEY|TOKEN)
+      (?:.|[\n\r]){0,32}?
+      (?P<token>
+        [0-9A-Z_-]{42,44}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - ibmcloud_apikey = abcdef0123_56789abcdef0123456789abcdef01234
+      - ibm_platform_key="f-_RrJDVnuVh07HNTcmnQx_b6CbcQsxmEarVm9P_RWtF"
+    references:
+      - https://cloud.ibm.com/docs/account?topic=account-userapikey
+      - https://cloud.ibm.com/apidocs/iam-identity-token-api

@@ -1,0 +1,32 @@
+rules:
+  - name: Mappedin API Key
+    id: kingfisher.mappedin.1
+    pattern: |
+      (?x)
+      \b
+      (
+        mik_[a-zA-Z0-9]{26}
+      )
+      \b
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'MAPPEDIN_KEY=mik_a1B2c3D4e5F6g7H8i9J0k1L2m3'
+    references:
+      - https://developer.mappedin.com/docs/mvf/v2/getting-started
+
+  - name: Mappedin API Secret
+    id: kingfisher.mappedin.2
+    pattern: |
+      (?x)
+      \b
+      (
+        mis_[a-zA-Z0-9]{52}
+      )
+      \b
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - 'MAPPEDIN_SECRET=mis_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V2w3X4y5Z6'
+    references:
+      - https://developer.mappedin.com/docs/mvf/v2/getting-started

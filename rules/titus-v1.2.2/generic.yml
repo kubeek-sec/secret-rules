@@ -1,0 +1,755 @@
+# The rules in this file detect "generic" secrets.
+# Generic secrets do not have well-defined structure like most new API token schemes do.
+# In particular, there isn't some notable prefix to search for, nor is there a
+# fixed length and alphabet for the secret content.
+# Because of all this, the patterns in these rules tend to be pretty complex, in
+# an attempt to avoid false positives.
+# These rules all have relatively bad precision and recall.
+
+rules:
+
+- name: Generic Secret
+  id: np.generic.1
+  base_score: 50
+
+  pattern: |
+    (?x)(?i)
+    secret
+    .{0,20}
+    \b
+    ([0-9a-z]{32,64})
+    \b
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - '    private static String CLIENT_SECRET = "6fb1cff7690db9ac066cadbbde8e3c078efdabcf";'
+
+  # FIXME: extend this rule so these examples get matched
+  negative_examples:
+  - "    client_credential='5pX8Q~MmTI8OMBJFVqMlFR4DE3Spz6Qm.xO.Gbf-'"
+  - "    secret_access_key = 'abcdefg12346+FJQCK'"
+  - '    Ldap password               ----   H7IKC85R#@4$'
+
+
+- name: Generic API Key
+  id: np.generic.2
+  base_score: 50
+
+  pattern: |
+    (?x)(?i)
+    (?: api_key | apikey | access_key | accesskey )
+    .{0,3}
+    [\ \t]* (?: : | = | := | => | , | ' | " ) [\ \t]*
+    .{0,3}
+    \b
+    ([0-9a-z][0-9a-z\-._/+]{30,62}[0-9a-z])
+    \b
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - 'API_KEY = "951bc382db9abad29c68634761dd6e19"'
+  - 'buildConfigField ''String'' , ''API_KEY'' , ''"951bc382db9cfee29c68634761dd6e19"''	API_KEY	'
+
+  negative_examples:
+  - 'name="ws_plugin__s2member_amazon_s3_comp_files_access_key" id="ws-plugin--s2member-amazon-s3-comp-files-access-key"'
+
+
+- name: Generic Username and Password
+  id: np.generic.3
+  base_score: 50
+
+  pattern: |
+    (?x)
+    (?: username | USERNAME | user | USER)       (?# username context keyword )
+    [\ \t]* = [\ \t]*                            (?# assignment / binder, sans newline )
+    ["'] ([a-zA-Z0-9.@_\-+]{3,30}) ["']          (?# quoted username )
+    \s* [,;]? \s*                                (?# optional assignment separator )
+    (?: \s* (?: \# | //) [^\n\r]*[\n\r])*        (?# optional line comments )
+    (?: password | pass | PASSWORD | PASS)       (?# password context keyword )
+    [\ \t]* = [\ \t]*                            (?# assignment / binder, sans newline )
+    ["'] ([^"']{5,30}) ["']                      (?# quoted password )
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      credential = UsernamePasswordCredential(
+          client_id='da34859b-2ae4-48c3-bfe0-1b28b7cf2eed',
+          username='donjuandemarco',
+          password='1qay@WXS????',
+          tenant_id='bc877b20-f135-4c13-a266-8ed26b8f0f4b')
+
+  - |
+      hostname = '10.11.12.13'
+      username = 'donjuandemarco@example.com'
+      password = '`123QWERasdf'
+
+  - |
+      hostname = '10.11.12.13'
+      USERNAME = 'donjuandemarco@example.com'
+      # some comment
+      # some other comment
+      PASS = '`123QWERasdf'
+
+  - |
+      user = 'abuser'  # some comment
+      password = 'abuser123456'  # some other comment
+
+  - |
+      user = 'Aladdin'
+      password = 'open sesame'
+
+  negative_examples:
+  - |
+      USERNAME=donjuan
+      PASSWORD=$($(dirname $0)/../bin/get-django-setting LOCAL_DATABASE_PASSWORD)
+  - ":authn_dbd_params => 'host=db_host port=3306 user=apache password=###### dbname=apache_auth',"
+
+  # FIXME: extend this rule so this actually gets matched
+  - |
+      #if DEBUG
+                string backend_host = "amazon-subdomain-for-database.string.us-east-1.rds.amazonaws.com";
+                string backend_user = "root";
+                string backend_pass = "XXXXXXXXXXXXX";
+                string backend_db = "database_db";
+                string backend_port = "1234";
+
+
+
+- name: Generic Username and Password
+  id: np.generic.4
+  base_score: 50
+  pattern: |
+    (?x)
+    (?: username | USERNAME | Username | UserName | user | USER)    (?# username context keyword )
+    [\ \t]* = [\ \t]*                                               (?# assignment / binder, sans newline )
+    ( [a-zA-Z][a-zA-Z0-9_+-]{2,29}
+    | [a-zA-Z][a-zA-Z0-9._+-]{2,29}@[a-zA-Z_.-]{2,30}
+    )                                                               (?# unquoted username or email )
+    \s* ;? \s*                                                      (?# optional assignment separator )
+    (?: \s* (?: \# | //) [^\n\r]*[\n\r])*                           (?# optional line comments )
+    [a-zA-Z0-9_]{0,30}                                              (?# optional prefix on password keyword )
+    (?: password | pass | PASSWORD | PASS | Password)               (?# password context keyword )
+    [\ \t]* = [\ \t]*                                               (?# assignment / binder, sans newline )
+    ([^\s$@{<]\S{4,29})                                             (?# unquoted password )
+    (?: \s | $ )                                                    (?# end-of-password anchor )
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      user = Aladdin
+      password = open_sesame
+
+  - |
+      user = Aladdin
+      // some comment
+      // some other comment
+      password = open_sesame
+
+  - ":authn_dbd_params => 'host=db_host port=3306 user=apache password=###### dbname=apache_auth',"
+
+  - |
+      [SupportSite]
+      Username=thisismyunsername
+      Password=thisismypassword
+
+  - |
+      [HELP_CLIENT]
+      AUTO_SESSION_USERNAME=myusername
+      AUTO_SESSION_PASSWORD=mypassword
+
+  negative_examples:
+  - |
+      user = 'Aladdin'
+      password = 'open_sesame'
+
+  - |
+      username = env.PERKEEP_TEST_USERNAME
+      password = env.PERKEEP_TEST_PASSWORD
+
+
+- name: Generic Password
+  id: np.generic.5
+  base_score: 50
+
+  pattern: |
+    (?x)(?i)
+    password["']?                                (?# preceding context )
+    [\ \t]* (?: = | : | := | => ) [\ \t]*        (?# binder )
+    "
+    (?! (?-i)[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+ " )  (?# reject ALL_CAPS_SNAKE_CASE constants )
+    ([^$<%@.,\s+'"(){}&/\#\-][^\s+'"(){}/]{4,})  (?# password )
+    "
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      password = "super$ecret"
+  - |
+      password="super$ecret"
+  - |
+      String usernamePassword = "application:" + appKey + ":" + appSecret;
+  - |
+      my_password: "super$ecret"
+  - |
+      "password": "super$ecret",
+  - |
+      my_password := "super$ecret"
+  - |
+      password   =>   "super$ecret"
+  - |
+      "ApplicationServicesConnection" : {
+          "ServiceAddress" : "https://services-dev.examples.com",
+          "AdminPassword" : "thisismypassword"
+      }
+  - |
+      private const string DevFolkoosComPfxPassword = "thisismypassword";
+  - |
+      "password": "YOURPASSWROD"
+  - |
+        create_random_name('sfrp-cli-cert2', 24),
+                    'cluster_name': self.create_random_name('sfrp-cli-', 24),
+                    'vm_password': "Pass123!@#",
+                    'policy_path': os.path.join(TEST_DIR, 'policy.json')
+                })
+
+  negative_examples:
+  - |
+      password = "123"
+  - |
+      password = super$ecret
+  - |
+      password = 'super$ecret'
+  - |
+      "password": "$super$ecret",
+  - |
+      sb.append("MasterUserPassword: " + getMasterUserPassword() + ",");
+  - |
+      "//localhost:1337/:_password = "+new Buffer("feast").toString("base64")
+  - |
+      export PGPASSWORD="$gdcapi_db_password"
+  - |
+      define wget::authfetch($source,$destination,$user,$password="",$timeout="0",$verbose=false) {
+  - |
+      - echo 'export DATABASE_PASSWORD="'$PRECOMPILE_PASSWORD'"' >> .env
+  - |
+      "/en/enterprise/3.0/authentication/keeping-your-account-and-data-secure/creating-a-strong-password":"/en/enterprise-server@3.0/auth"
+  - |
+      "password": "&lt;YOURPASSWROD&gt;"
+  - |
+      as: 'cms_user_password'
+        get '/passwords/:id/edit' => "cms/sites/passwords#edit", as: 'edit_password'
+        put '/forgot-password' => "cms/sites/passwords#update", as: 'update_password'
+      end
+  - |
+      IAMUserChangePassword = "arn:aws:iam::aws:policy/IAMUserChangePassword"
+  - |
+      this.addPassword = "#add-password";
+  - |
+      Password = "REISSUE_ACCOUNT_PASSWORD"
+  - |
+      password = "RESET_PASSWORD_TOKEN"
+  - |
+      password: "ACCOUNT_PASSWORD_FIELD"
+
+
+
+- name: Generic Password
+  id: np.generic.6
+  base_score: 50
+
+  pattern: |
+    (?x)(?i)
+    password["']?                                (?# preceding context )
+    [\ \t]* (?: = | : | := | => ) [\ \t]*        (?# binder )
+    '
+    (?! (?-i)[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+ ' )  (?# reject ALL_CAPS_SNAKE_CASE constants )
+    ([^$<%@.,\s+'"(){}&/\#\-][^\s+'"(){}/]{4,})  (?# password )
+    '
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      :password       => '4ian1234',
+  - |
+      common.then_log_in({username: 'geronimo', password: '52VeZqtHDCdAr5yM'});
+
+  - |
+      beta => {
+        host            => 'foo.example.com',
+        user            => 'joe',
+        password        => 'thisismypassword',
+      }
+
+  negative_examples:
+  - |
+      echo 'password = '.$p['config']['daemon_password']."\n";
+  - |
+      usernameLabel:"Username or email:",passwordLabel:"Password:",rememberMeLabel:"Remember me:"
+  - |
+      this.addPassword = '#add-password';
+  - |
+      password = 'REISSUE_ACCOUNT_PASSWORD'
+
+
+
+- name: Credentials in .NET System.Net.NetworkCredential
+  id: np.generic.7
+  base_score: 85
+
+  pattern: |
+    (?x)
+    \b
+    (?: NetworkCredential | NETWORKCREDENTIAL | networkcredential )
+    \s* \( \s*
+      " ( [^"\n]{3,50} ) "               (?# username )
+      \s* , \s*
+      " ( [^"\n]{3,50} ) "               (?# password )
+    \s* \)
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      sender.Credentials = new NetworkCredential("NuGets@example.com", "vzihlaquknriqlht");
+
+  - |
+      $webClient.Credentials = new-object System.Net.NetworkCredential("cidownload", "AP7JaG9ToerxBc6gWP5LcU2CNpb");
+
+  references:
+  - https://learn.microsoft.com/en-us/dotnet/api/system.net.networkcredential
+
+  description: >
+    A .NET `System.Net.NetworkCredential` value with hardcoded parameters was found.
+    This may allow an attack access to a resource that uses basic, digest, NTLM, or Kerberos authentication.
+
+
+
+- name: Credentials in .NET System.DirectoryServices.DirectoryEntry
+  id: np.generic.8
+  base_score: 85
+
+  pattern: |
+    (?x)
+    \b
+    (?: DirectoryEntry | DIRECTORYENTRY | directoryentry )
+    \s* \( \s*
+      " ( [^"\n]{3,100} ) "               (?# path )
+      \s* , \s*
+      " ( [^"\n]{3,50} ) "                (?# username )
+      \s* , \s*
+      " ( [^"\n]{3,50} ) "                (?# password )
+      (?: \s* , \s* [^)]{3,50} )?         (?# authentication type )
+    \s* \)
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      $domain = New-Object DirectoryServices.DirectoryEntry("LDAP://10.10.10.1","domain\user", "secret")
+  - |
+      new DirectoryEntry("LDAP://EXAMPLE.COM",
+                "ADMNALRRHH@EXAMPLE.COM",
+                "Rrhh1234");
+
+  references:
+  - https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.directoryentry
+
+  description: >
+    A .NET `System.DirectoryServices.DirectoryEntry` value was found with hardcoded credentials.
+    This may allow an attacker access to an Active Directory instance.
+
+
+- name: Sensitive Value in .NET Configuration
+  id: np.generic.9
+  base_score: 55
+
+  pattern: |
+    (?x)
+    < \s* add \s+ key \s* = \s*
+      " (
+      [^\n"]{0,20}
+      (?: pass | Pass | PASS
+        | secret | Secret | SECRET
+        | user | User | USER
+        | admin | Admin | ADMIN
+        | token | Token | TOKEN
+        )
+      [^\n"]{0,20}
+      ) "
+    \s+
+    value \s* = \s* " ([^\n"]{3,100}) " \s* / \s* >
+
+  categories: [fuzzy, generic, secret]
+
+  description: >
+    A possibly-sensitive value in .NET app configuration was found.
+    This may allow an attacker a way to bypass authentication or move laterally.
+
+  examples:
+  - |
+      <add key="FromEmailAddress" value="killer.joe@example.com"/>
+      <add key="FromEmailPassword" value="Prestigitariu$"/>
+
+  negative_examples:
+  - |
+      <add key="ConnectionString_B2B" value="Server=awsbman-t,1433;Database=B2B;User ID=b2buser;Password=#gets0m3;Trusted_Connection=False" />
+  - '<add key="ClearTextPassword" value="eyJ0eXAiOiAiVENWMiJ9.RkNWLXdXS3M1RVBfencxM4A0WmJzdVlCQzFj.OGY1OWRkNGMtYTUxYS04ZDYwLWFiZGYtZWE5MWFhZWJiODhh" />'
+
+
+  references:
+  - https://learn.microsoft.com/en-us/dotnet/desktop/winforms/advanced/application-settings-overview
+  - https://learn.microsoft.com/en-us/dotnet/framework/configure-apps/file-schema/appsettings/appsettings-element-for-configuration
+
+
+- name: Connection String in .NET Configuration
+  id: np.generic.10
+  base_score: 85
+
+  pattern: |
+    (?x)
+    < \s* add \s+ key \s* = \s*
+      " (
+      [^\n"]{0,20}
+      (?: [Cc]onnection[Ss]tring | CONNECTIONSTRING )
+      [^\n"]{0,20}
+      ) "
+    \s+
+    value \s* = \s* " ([^\n"]{3,200}) " \s* / \s* >
+
+  categories: [fuzzy, generic, secret]
+
+  description: >
+    A possibly-sensitive connection string in .NET app configuration was found.
+    This may allow an attacker direct access to a database.
+
+  examples:
+  - |
+      <add key="ConnectionString_B2B" value="Server=awsbman-t,1433;Database=B2B;User ID=b2buser;Password=#gets0m3;Trusted_Connection=False" />
+
+  negative_examples:
+  - |
+      <add key="FromEmailAddress" value="killer.joe@example.com"/>
+      <add key="FromEmailPassword" value="Prestigitariu$"/>
+
+  references:
+  - https://learn.microsoft.com/en-us/dotnet/desktop/winforms/advanced/application-settings-overview
+  - https://learn.microsoft.com/en-us/dotnet/framework/configure-apps/file-schema/appsettings/appsettings-element-for-configuration
+
+
+- name: Generic Password
+  id: np.generic.11
+  base_score: 45
+
+  pattern: |
+    (?x)(?i)
+    the\ (?: default\ )? password\ is\ '
+    (
+      [^'\n\#$|"{<+\ ()\\]      (?# more restrictive first character to eliminate common interpolation forms )
+      [^'\n]{3,60}
+    )'
+
+  description: >
+    A password was found.
+    This may allow an attacker unintended access to a resource.
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      echo "Rrun 'bin/ipa_kinit admin' to acquire a Kerberos ticket"
+      echo "The password is 'Secret123'"
+
+  - |
+      The Blooby has a default Access Point Name 'Blooby'
+      The default Password is 'blooberry'
+
+
+- name: Generic Password
+  id: np.generic.12
+  base_score: 45
+
+  pattern: |
+    (?x)(?i)
+    the\ (?: default\ )? password\ is\ "
+    (
+      [^'\n\#$|"{<+\ ()\\]     (?# restrictive first character to suppress common interpolation forms )
+      [^"\n]{3,60}
+    )"
+
+  description: >
+    A password was found.
+    This may allow an attacker unintended access to a resource.
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      so at this point, just fill in your mount point name, ensure the password is "centipede" and press the "On" button!
+
+
+- name: Generic Username and Password
+  id: np.generic.13
+  base_score: 45
+
+  pattern: |
+    (?x)(?i)
+    the\ (?: default\ )? password\ for\ (?: the\ )? (?: user|username ) \ '
+    (
+      [^'\n\#$|"{<+\ ()\\]     (?# restrictive first character to suppress common interpolation forms )
+      [^'\n]{2,24}
+    )'
+    \ is\ '
+    (
+      [^'\n\#$|"{<+\ ()\\]     (?# restrictive first character to suppress common interpolation forms )
+      [^'\n]{3,60}
+    )'
+
+  description: >
+    A password was found.
+    This may allow an attacker unintended access to a resource.
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      2. Ensure the password for user 'postgres' is 'admin' or change .env file.
+
+
+- name: Generic Username and Password
+  id: np.generic.14
+  base_score: 45
+
+  pattern: |
+    (?x)(?i)
+    the\ (?: default\ )? password\ for\ (?: the\ )? (?: user|username ) \ "
+    (
+      [^'\n\#$|"{<+\ ()\\]     (?# restrictive first character to suppress common interpolation forms )
+      [^"\n]{2,24}
+    )"
+    \ is\ "
+    (
+      [^'\n\#$|"{<+\ ()\\]     (?# restrictive first character to suppress common interpolation forms )
+      [^"\n]{3,60}
+    )"
+
+  description: >
+    A password was found.
+    This may allow an attacker unintended access to a resource.
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - |
+      The default password for the user "pyne-user" is "pyne".
+
+
+- name: Generic Secret
+  id: np.generic.15
+  base_score: 50
+
+  pattern: |
+    (?x)(?i)
+    \b if \b .{0,50}
+    \b (?: secret | pass | password | challenge ) \b
+    \s* (?: == | != | === | !== ) \s*
+    " ( [^"\n]{3,60} ) "
+
+  categories: [fuzzy, generic, secret]
+
+  description: >
+    A password was found.
+    This may allow an attacker unintended privileged access to a resource.
+
+  examples:
+  - |
+      if creds.Secret != "open-sesame" {
+        http.Error(rw, "unauthorized", http.StatusUnauthorized)
+      }
+
+  - |
+      username = request.form["username"]
+      password = request.form["password"]
+
+      if username == "jojoba" and password == "team10":
+          return redirect(url_for('profile'))
+      else:
+          return render_template("login.html", error="Invalid credentials")
+
+  - |
+      password = request.form.get('password')
+      result = "Incorrect Username or Password"
+      if username == "adM1n1sTrat0R" and password == "123P4ssW0rd@@":
+          result = "Logged in successfully as an Admin"
+      return render_template('vulnerabilities/sensitive-data-exposure-low.html',msg=result)
+
+- name: Generic Secret
+  id: np.generic.16
+  base_score: 50
+
+  pattern: |
+    (?x)(?i)
+    \b if \b .{0,50}
+    \b (?: secret | pass | password | challenge ) \b
+    \s* (?: == | != | === | !== ) \s*
+    ' ( [^'\n]{3,60} ) '
+
+  categories: [fuzzy, generic, secret]
+
+  description: >
+    A password was found.
+    This may allow an attacker unintended privileged access to a resource.
+
+  examples:
+  - |
+      if creds.Secret != 'open-sesame' {
+        http.Error(rw, "unauthorized", http.StatusUnauthorized)
+      }
+
+  - |
+      hashed_password = users.get(username)
+      if username == 'example@gmail.com' and password =='logmein':
+          return jsonify({'success': True, 'message': 'Login successful'}), 200
+      if hashed_password and check_password_hash(hashed_password, password):
+          return jsonify({'success': True, 'message': 'Login successful'}), 200
+      else:
+          return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+
+
+# The next two rules cover credentials inlined in minified JS object literals
+# (e.g. compiled Angular/React/Vue env-config blobs). They run on a corpus that
+# the existing np.generic.3-6 rules don't cover well, but they are also easy
+# to trip on UI label/forgot-password scaffolding. Marked noisy and gated
+# behind --include-noisy on the CLI so the default scan stays clean.
+
+- name: Generic Password in JavaScript Object
+  id: np.generic.17
+  base_score: 50
+  noisy: true
+
+  pattern: |
+    (?x)(?i)
+    [a-zA-Z0-9_]{1,40}                              (?# camelCase key prefix, e.g. "oauth" )
+    (?: pass (?:word|wd|phrase)? | passwd )          (?# password suffix keyword )
+    ["']?                                            (?# optional quote around key )
+    \s* : \s*                                        (?# colon binder - JS object / JSON style )
+    "
+    ( [^"$\n<>{}\[\]]{6,100} )                       (?# quoted password value )
+    "
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - 'adminPassword:"thisismypassword"'
+  - 'dbPasswd:"s3cr3tP@ss!"'
+  - '"userPass":"open_sesame123"'
+  - 'appPassphrase:"correct horse battery"'
+
+  # The OP's pattern intentionally does not require URL-shaped or fragment
+  # values to be excluded; those cases (e.g. forgotPassword reset links,
+  # changePassword anchor IDs) still match. They are part of the noisy
+  # surface this rule covers — opt-in via --include-noisy.
+  negative_examples:
+  - 'passwordLabel:"Password:"'
+  - 'password:""'
+  - 'password:"$ENV_VAR"'
+  - 'usernameLabel:"Username or email:",passwordLabel:"Password:",rememberMeLabel:"Remember me:"'
+
+
+- name: Generic Username and Password in JavaScript Object
+  id: np.generic.18
+  base_score: 50
+  noisy: true
+
+  pattern: |
+    (?x)(?i)
+    [a-zA-Z0-9_]{0,40}                              (?# camelCase key prefix )
+    (?: user (?:name)? )                             (?# user suffix keyword )
+    ["']?                                            (?# optional quote around key )
+    \s* : \s*                                        (?# colon binder )
+    " ( [^"\n]{3,50} ) "                             (?# username value )
+    \s* , \s*                                        (?# JS object comma separator )
+    [a-zA-Z0-9_]{0,40}                              (?# camelCase key prefix )
+    (?: pass (?:word|wd|phrase)? | passwd )          (?# password suffix keyword )
+    ["']?                                            (?# optional quote around key )
+    \s* : \s*                                        (?# colon binder )
+    " ( [^"$\n]{6,100} ) "                           (?# password value )
+
+  categories: [fuzzy, generic, secret]
+
+  # The pattern's second key prefix is [a-zA-Z0-9_]{0,40}, which does not
+  # allow a leading double-quote between the comma and the password key.
+  # The fully-quoted-key variant '"appUser":"...","appPass":"..."' is therefore
+  # not matched by this rule on its own — np.generic.17 picks the password up
+  # in that shape.
+  examples:
+  - 'dbUser:"admin",dbPassword:"s3cr3tP@ss!"'
+  - 'oauthUser:"service-account",oauthPassword:"XKskiswok812KS"'
+
+  negative_examples:
+  - 'usernameLabel:"Username:",passwordLabel:"Password:"'
+  - 'user:"$USER",pass:"$PASS"'
+  - 'user:"",password:"tooshort"'
+
+
+- name: Hardcoded Credential in JSON Key-Value Pair
+  id: np.generic.19
+  base_score: 70
+
+  pattern: |
+    (?x)(?i)
+    "key"\s*:\s*
+    "(?P<field>password|passwd|pass|secret|client_secret|app_secret|api_secret|user_secret|api_?key|apikey|auth_?token|access_?token|username|user|email)"
+    [^}]{0,200}
+    "value"\s*:\s*
+    "
+    (?P<credential>
+      [^"{\$%<]{1}
+      [^"]{3,99}
+    )
+    "
+
+  categories: [fuzzy, generic, secret]
+
+  examples:
+  - '{"key": "password", "value": "IceCool9000", "type": "text"}'
+  - '{"key": "username", "value": "p@perfume.com", "type": "text"}'
+  - '{"key": "client_secret", "value": "8WQDHQ9X4mdtzK1Kp5gz833T4dHx0cbH", "type": "text"}'
+  - '{"key": "api_key", "value": "sk-live-abc123def456ghi789jkl012", "type": "text"}'
+  - '{"key": "secret", "value": "MySecretKey123!", "type": "text"}'
+  - '"key":"passwd","value":"hunter2abc","type":"text"'
+  - '{"key": "access_token", "value": "ya29.a0AfH6SMAexampleTokenHere", "type": "text"}'
+  - '{"key": "auth_token", "value": "BearerAbc123def456XYZ", "type": "text"}'
+  - '{"key": "email", "value": "admin@example.com", "type": "text"}'
+  - '{"key": "user", "value": "serviceaccount", "type": "text"}'
+  - |
+      {
+          "key": "client_secret",
+          "value": "8OsZciU4N4lkqyBHKFiEJQJuhjTnqzFZeoWsIofIEUTvxQUFu9FDRv2NelHi",
+          "type": "text"
+      }
+
+  negative_examples:
+  - '{"key": "password", "value": "{{password}}", "type": "text"}'
+  - '{"key": "client_secret", "value": "{{client_secret}}", "type": "text"}'
+  - '{"key": "client_secret", "value": "{{clientSecret}}", "type": "text"}'
+  - '{"key": "password", "value": "${PASSWORD}", "type": "text"}'
+  - '{"key": "password", "value": "%PASSWORD%", "type": "text"}'
+  - '{"key": "password", "value": "", "type": "text"}'
+  - '{"key": "password", "value": "abc", "type": "text"}'
+  - '{"key": "grant_type", "value": "password", "type": "text"}'
+  - '{"key": "username", "value": "{{username}}", "type": "text"}'
+  - '{"key": "email", "value": "<your_email>", "type": "text"}'
+
+  description: |
+    A hardcoded credential or identity was found in a JSON key-value structure.
+    Many tools and frameworks store parameters as JSON objects with "key" and
+    "value" fields. When credential fields like password, username,
+    client_secret, or API keys contain plaintext values rather than
+    environment or template variables, the credential is exposed to anyone
+    with access to the file.

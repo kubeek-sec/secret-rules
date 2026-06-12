@@ -1,0 +1,16 @@
+rules:
+  - name: Hack Club AI API Key
+    id: kingfisher.hackclub.1
+    pattern: |
+      (?x)
+      \b
+      (
+        sk-hc-v1-[a-f0-9]{64}
+      )
+      \b
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - 'HACKCLUB_API_KEY=sk-hc-v1-a1b2c3d4e5f60708a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f60708a9b0c1d2'
+    references:
+      - https://jams.hackclub.com/jam/ai-travel

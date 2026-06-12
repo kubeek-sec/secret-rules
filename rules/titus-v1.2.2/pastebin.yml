@@ -1,0 +1,23 @@
+rules:
+  - name: Pastebin API Key
+    id: kingfisher.pastebin.1
+    base_score: 35
+    pattern: |
+      (?xi)
+      \b
+      pastebin
+      (?:.|[\n\r]){0,32}?
+      (?:SECRET|PRIVATE|ACCESS|KEY|TOKEN)
+      (?:.|[\n\r]){0,32}?
+      \b
+      (?P<token>
+        [A-Z0-9_]{32}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - pastebin_key=zwD26NeyMCvBsR9nxfaybLHD7TcLh22O
+      - pastebin_api_token=zwD26NeyMCvBsR9n_faybLHD7TcLh22O

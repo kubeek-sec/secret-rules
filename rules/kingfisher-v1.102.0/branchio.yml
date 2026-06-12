@@ -1,0 +1,79 @@
+rules:
+  - name: Branch.io Live Key
+    id: kingfisher.branchio.1
+    pattern: |
+      (?x)
+      \b
+      (
+        key_live_[a-zA-Z0-9]{16,40}
+      )
+      \b
+    confidence: medium
+    min_entropy: 3.0
+    examples:
+      - 'BRANCH_KEY=key_live_kaFuWw8WvY7yn1d9yYiP8gokwqjV0Swt'
+      - 'branch.init("key_live_hcnegO5R0SbbpAe1M4rjvgckbFMeQB2N");'
+    references:
+      - https://help.branch.io/developers-hub/docs/deep-linking-api
+    depends_on_rule:
+      - rule_id: kingfisher.branchio.3
+        variable: BRANCH_SECRET
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: "https://api2.branch.io/v1/app/{{ TOKEN }}?branch_secret={{ BRANCH_SECRET }}"
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+
+  - name: Branch.io Test Key
+    id: kingfisher.branchio.2
+    pattern: |
+      (?x)
+      \b
+      (
+        key_test_[a-zA-Z0-9]{16,40}
+      )
+      \b
+    confidence: medium
+    min_entropy: 3.0
+    examples:
+      - 'BRANCH_KEY=key_test_jfdwlg5PtY8mDoR3fGpv4hkesztiqEWZ'
+      - 'branch.init("key_test_plqYW3Aq9Xija1cobGMieipndBzO5y7J");'
+    references:
+      - https://help.branch.io/developers-hub/docs/deep-linking-api
+      - https://help.branch.io/apidocs/app-api
+    depends_on_rule:
+      - rule_id: kingfisher.branchio.3
+        variable: BRANCH_SECRET
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: "https://api2.branch.io/v1/app/{{ TOKEN }}?branch_secret={{ BRANCH_SECRET }}"
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+
+  - name: Branch.io Secret
+    id: kingfisher.branchio.3
+    visible: false
+    pattern: |
+      (?xi)
+      \b
+      (?:BRANCH_SECRET|branch_secret|BRANCH_KEY_SECRET)
+      \s* [=:] \s* ["']?
+      (
+        [A-Za-z0-9]{40,64}
+      )
+      ["']?
+    confidence: medium
+    min_entropy: 3.0
+    examples:
+      - 'BRANCH_SECRET=abcdefghijklmnopqrstuvwxyz1234567890ABCD'
+      - 'branch_secret: "abcd1234efgh5678ijkl9012mnop3456qrst7890"'

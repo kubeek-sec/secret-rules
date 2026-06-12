@@ -1,0 +1,19 @@
+rules:
+  - name: Iterative DVC Studio Access Token
+    id: kingfisher.iterative.1
+    pattern: |
+      (?x)
+      \b
+      (
+        isat_[a-zA-Z0-9_-]{20,80}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.5
+    confidence: medium
+    categories: [api, key]
+    examples:
+      - 'DVC_STUDIO_TOKEN=isat_AbCdEfGhIjKlMnOpQrStUvWxYz123456'
+    references:
+      - https://dvc.org/doc/command-reference/studio/token

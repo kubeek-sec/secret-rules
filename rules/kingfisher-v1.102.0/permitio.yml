@@ -1,0 +1,35 @@
+rules:
+  - name: Permit.io API Key
+    id: kingfisher.permitio.1
+    pattern: |
+      (?x)
+      \b
+      (
+        permit_key_[0-9A-Za-z]{85,86}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+      min_uppercase: 2
+      min_lowercase: 2
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - 'PERMIT_API_KEY=permit_key_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVW'
+      - 'permit_key: "permit_key_9876543210zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA9876543210zyxwvutsrqponm"'
+    references:
+      - https://docs.permit.io/overview/get-api-key/
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://api.permit.io/v2/api-key/scope
+          headers:
+            Accept: application/json
+            Authorization: "Bearer {{ TOKEN }}"
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid

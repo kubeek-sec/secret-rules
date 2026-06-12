@@ -1,0 +1,61 @@
+rules:
+  - name: Tolgee Project API Key
+    id: kingfisher.tolgee.1
+    pattern: |
+      (?x)
+      \b
+      (
+        tgpak_[a-z0-9]{40,64}
+      )
+      \b
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'TOLGEE_API_KEY=tgpak_ha3tkxzton2wm4twmrsgkmtgmnsgw4bqgvttemttnrwwoyld'
+      - 'X-API-Key: tgpak_gm2tgnrqgi3tsnrvheytomrvme4dgmrtgntdgntfmu3to'
+    references:
+      - https://tolgee.io/platform/account_settings/api_keys_and_pat_tokens
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://app.tolgee.io/v2/projects
+          headers:
+            X-API-Key: "{{ TOKEN }}"
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid
+
+  - name: Tolgee Personal Access Token
+    id: kingfisher.tolgee.2
+    pattern: |
+      (?x)
+      \b
+      (
+        tgpat_[a-z0-9]{40,64}
+      )
+      \b
+    min_entropy: 3.0
+    confidence: medium
+    examples:
+      - 'TOLGEE_PAT=tgpat_c813fppevpm6smlv8gld2fqq7knqqfht5ri1vgo57gj6ivkbhp5'
+    references:
+      - https://tolgee.io/platform/account_settings/api_keys_and_pat_tokens
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://app.tolgee.io/v2/projects
+          headers:
+            X-API-Key: "{{ TOKEN }}"
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid

@@ -1,0 +1,33 @@
+rules:
+  # Matches AMQP connection URIs with embedded credentials.
+  # Named groups follow the Postgres validator pattern for Go-based validation.
+  # Regex sourced from TruffleHog detector (detector ID 903) with named groups added.
+  - name: RabbitMQ Credential
+    id: kingfisher.rabbitmq.1
+    base_score: 75
+    pattern: |
+      (?xi)
+      amqps?
+      :\/\/
+      (?P<user>[\S]{3,50})
+      :
+      (?P<password>[\S]{3,50})
+      @
+      (?P<host>[-.%\w]+)
+      (?::(?P<port>[0-9]{1,5}))?
+      (?:[\/][^\s]*)?
+    pattern_requirements:
+      min_special_chars: 1
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - amqp://user:password@rabbitmq.example.com/queue
+      - amqps://admin:3eCa3P@192.168.1.10:5671/vhost
+      - amqps://myuser:s3cretP4ss@bunny.cloudamqp.com/myvhost
+      - amqp://app:xK9!mN2$@broker.internal:5672/production
+    negative_examples:
+      - amqp://user:pw@host
+      - amqp://guest:guest@localhost/
+    references:
+      - https://www.rabbitmq.com/docs/uri-spec
+      - https://www.rabbitmq.com/docs/management

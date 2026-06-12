@@ -1,0 +1,40 @@
+rules:
+  - name: Hex Technologies API Token
+    id: kingfisher.hex.1
+    pattern: |
+      (?xi)
+      \b
+      (
+        hxt[wp]_
+        [a-f0-9]{16}
+        (?:[a-f0-9]{16}){5}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 12
+    confidence: medium
+    min_entropy: 3.5
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://app.hex.tech/api/v1/projects?limit=1
+          headers:
+            Authorization: "Bearer {{ TOKEN }}"
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: WordMatch
+              words:
+                - '"values"'
+                - '"pagination"'
+              match_all_words: true
+    references:
+      - https://learn.hex.tech/docs/api-integrations/api/overview
+      - https://learn.hex.tech/docs/api-integrations/api/reference
+    examples:
+      - "HEX_API_TOKEN=hxtp_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      - "HEX_WORKSPACE_TOKEN=hxtw_fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"

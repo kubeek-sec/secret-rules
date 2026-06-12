@@ -1,0 +1,23 @@
+rules:
+  - name: Harness Personal Access Token (PAT)
+    id: kingfisher.harness.pat.1
+    base_score: 70
+    pattern: |
+      (?xi)
+      \b
+      (?P<token>
+        pat\.
+        [A-Z0-9]{22}
+        \.
+        [0-9a-f]{24}
+        \.
+        [A-Z0-9]{20}
+      )
+      \b
+    min_entropy: 3.4
+    confidence: medium
+    examples:
+      - 'HARNESS_TOKEN="pat.AbCdEfGhIjKlMnOpQrStUv.0123abcd4567ef890123abcd.ZyXwVuTsRqPoNmLkJiHg"'
+    references:
+      - https://developer.harness.io/docs/platform/automation/api/api-quickstart/
+      - https://apidocs.harness.io/

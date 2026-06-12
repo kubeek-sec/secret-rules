@@ -1,0 +1,50 @@
+rules:
+  - name: Pinterest Access Token
+    id: kingfisher.pinterest.1
+    pattern: |
+      (?x)
+      \b
+      (
+        pina_[a-zA-Z0-9_-]{20,200}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.5
+    confidence: high
+    categories: [api, key]
+    examples:
+      - 'PINTEREST_ACCESS_TOKEN=pina_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890'
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://api.pinterest.com/v5/user_account
+          headers:
+            Authorization: Bearer {{ TOKEN }}
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+    references:
+      - https://developers.pinterest.com/docs/api/v5/
+
+  - name: Pinterest Refresh Token
+    id: kingfisher.pinterest.2
+    pattern: |
+      (?x)
+      \b
+      (
+        pinr_[a-zA-Z0-9._-]{20,500}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.5
+    confidence: high
+    categories: [api, key]
+    examples:
+      - 'PINTEREST_REFRESH_TOKEN=pinr_eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc123'
+    references:
+      - https://developers.pinterest.com/docs/api/v5/oauth-token/

@@ -1,0 +1,33 @@
+rules:
+
+- name: HuggingFace User Access Token
+  id: np.huggingface.1
+  base_score: 60
+
+  pattern: '\b(hf_[a-zA-Z]{34})\b'
+
+  categories: [api, secret]
+
+  references:
+  - https://huggingface.co/docs/hub/security-tokens
+
+  examples:
+  - 'HF_TOKEN:"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"'
+
+  validation:
+    type: Http
+    content:
+      request:
+        method: GET
+        url: https://huggingface.co/api/whoami-v2
+        headers:
+          Authorization: 'Bearer {{ TOKEN }}'
+          Accept: application/json
+        response_matcher:
+          - report_response: true
+          - type: StatusMatch
+            status:
+              - 200
+          - type: WordMatch
+            words:
+              - '"name"'

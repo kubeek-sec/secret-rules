@@ -1,0 +1,35 @@
+rules:
+  - name: Heartland Portico API Key
+    id: kingfisher.heartland.1
+    pattern: |
+      (?x)
+      \b
+      (
+        skapi_cert_
+        [A-Za-z0-9]{34,42}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.5
+    confidence: high
+    examples:
+      - "config.secretApiKey = \"skapi_cert_AeUdFKCJ8mBl5ThCDPCFdEgDJi8k9AaKO7c\""
+      - "HEARTLAND_API_KEY=skapi_cert_ZfVeXwDUBbMlJnQIEsJGLbMkrQOiPtNh8e2"
+    references:
+      - https://developer.heartlandpaymentsystems.com/
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://cert.api2-c.heartlandportico.com/Hps.Exchange.PosGateway/PosGatewayService.asmx
+          headers:
+            Authorization: "ApiKey {{ TOKEN }}"
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200, 400]
+            - type: StatusMatch
+              status: [401, 403]
+              negative: true

@@ -1,0 +1,35 @@
+rules:
+  - name: Thunderstore API Token
+    id: kingfisher.thunderstore.1
+    pattern: |
+      (?x)
+      \b
+      (
+        tss_[a-zA-Z0-9_-]{20,80}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.5
+    confidence: medium
+    categories: [api, key]
+    examples:
+      - 'THUNDERSTORE_TOKEN=tss_AbCdEfGhIjKlMnOpQrStUvWxYz123456'
+    references:
+      - https://thunderstore.io/api/docs/
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://thunderstore.io/api/experimental/current-user/
+          headers:
+            Authorization: "Bearer {{ TOKEN }}"
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: WordMatch
+              words:
+                - '"username"'

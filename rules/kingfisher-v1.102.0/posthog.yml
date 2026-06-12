@@ -1,0 +1,108 @@
+rules:
+  - name: PostHog Personal API Key
+    id: kingfisher.posthog.2
+    pattern: |
+      (?x)
+      (
+        phx_[A-Za-z0-9]{44,48}
+      )
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - "phx_FNKCx83Ko0JQMuZH1zz94xgK798TCUybkf79ZKYKwKQWbEw"
+      - "phx_nxgX8CziTYtcmdR2xF3R046LBz49rHBXlYHJGCJEilfZIrl"
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://app.posthog.com/api/users/@me/
+          headers:
+            Authorization: "Bearer {{ TOKEN }}"
+            Content-Type: "application/json"
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid
+    references:
+      - https://posthog.com/docs/api
+      - https://github.com/PostHog/posthog/blob/e408aac5debe02b39a6a67cfd028f16a2ca7bc90/posthog/models/utils.py#L260-L290
+
+  - name: PostHog Feature Flags Secure API Key
+    id: kingfisher.posthog.3
+    pattern: |
+      (?x)
+      (
+        phs_[A-Za-z0-9]{44,48}
+      )
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - "phs_8BamSCGAJL4J0hBl2WmkcswecSArJAXO20xzcpYhdiPto9B"
+      - "phs_FsG1YzDpCu64PFUcbW1CiEEfiFg1IIBRsME3qqehpZ5GpoT"
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://app.posthog.com/api/users/@me/
+          headers:
+            Authorization: "Bearer {{ TOKEN }}"
+            Content-Type: "application/json"
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid
+    references:
+      - https://posthog.com/docs/api
+      - https://github.com/PostHog/posthog/blob/e408aac5debe02b39a6a67cfd028f16a2ca7bc90/posthog/models/utils.py#L260-L290
+
+  - name: PostHog OAuth Access Token
+    id: kingfisher.posthog.4
+    pattern: |
+      (?x)
+      (
+        pha_[A-Za-z0-9]{40,43}
+      )
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - "pha_XgrXUnvwyoPLmjwHES5lc8scZUtheBpa1QV1qmssutB"
+      - "pha_35kHVLA1E068nvrwUTgabkh8xvGGTpSpsVjGcpVNfis"
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://app.posthog.com/api/users/@me/
+          headers:
+            Authorization: "Bearer {{ TOKEN }}"
+            Content-Type: "application/json"
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid
+    # Revocation not added: I did not find a documented token self-revoke
+    # endpoint for OAuth access tokens in the public PostHog API docs.
+    references:
+      - https://posthog.com/docs/api
+      - https://github.com/PostHog/posthog/blob/e408aac5debe02b39a6a67cfd028f16a2ca7bc90/posthog/models/utils.py#L260-L290
+
+  - name: PostHog OAuth Refresh Token
+    id: kingfisher.posthog.5
+    pattern: |
+      (?x)
+      (
+        phr_[A-Za-z0-9]{40,43}
+      )
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - "phr_9csMsAjlUNEW3T9hjDELzJE7RFbNZjvfpZWmxeoksHV"
+      - "phr_cObbRbJqZpvTSr9UEyUG1NxQDfwKMNouxrEiwQuaoER"
+    references:
+      - https://posthog.com/docs/api
+      - https://github.com/PostHog/posthog/blob/e408aac5debe02b39a6a67cfd028f16a2ca7bc90/posthog/models/utils.py#L260-L290

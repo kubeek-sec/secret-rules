@@ -1,0 +1,82 @@
+rules:
+  - name: Cloudinary Cloud Name
+    id: kingfisher.cloudinary.3
+    pattern: |
+      (?xi)
+      \b
+      cloudinary
+      (?:.|[\n\r]){0,32}?
+      (?:CLOUD[_\s]?NAME|CLOUD)
+      (?:.|[\n\r]){0,16}?
+      \b
+      (
+        [a-z0-9_-]{3,32}
+      )
+      \b
+    min_entropy: 2.5
+    confidence: medium
+    visible: false
+    examples:
+      - CLOUDINARY_CLOUD_NAME=demo
+  - name: Cloudinary API Key
+    id: kingfisher.cloudinary.2
+    pattern: |
+      (?xi)
+      \b
+      cloudinary
+      (?:.|[\n\r]){0,32}?
+      (?:API[_\s]?KEY|KEY)
+      (?:.|[\n\r]){0,16}?
+      \b
+      (
+        [0-9]{15}
+      )
+      \b
+    min_entropy: 3.0
+    confidence: medium
+    visible: false
+    examples:
+      - CLOUDINARY_API_KEY=123456789012345
+  - name: Cloudinary API Secret
+    id: kingfisher.cloudinary.1
+    pattern: |
+      (?xi)
+      \b
+      cloudinary
+      (?:.|[\n\r]){0,32}?
+      (?:SECRET|PRIVATE|API[_\s]?SECRET)
+      (?:.|[\n\r]){0,32}?
+      \b
+      (
+        [A-Za-z0-9]{32}
+      )
+      \b
+    min_entropy: 3.5
+    confidence: medium
+    pattern_requirements:
+      min_digits: 2
+    examples:
+      - CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz123456
+      - cloudinary_secret = "aB3dE5fG7hI9jK1lM3nO5pQ7rS9tU1vW"
+    references:
+      - https://cloudinary.com/documentation/developer_onboarding_faq_find_credentials
+      - https://cloudinary.com/documentation/image_upload_api_reference
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: "https://api.cloudinary.com/v1_1/{{ CLOUDNAME }}/usage"
+          headers:
+            Authorization: "Basic {{ APIKEY | append: ':' | append: TOKEN | b64enc }}"
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid
+    depends_on_rule:
+      - rule_id: kingfisher.cloudinary.2
+        variable: APIKEY
+      - rule_id: kingfisher.cloudinary.3
+        variable: CLOUDNAME

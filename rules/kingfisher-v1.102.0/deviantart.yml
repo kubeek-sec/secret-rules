@@ -1,0 +1,52 @@
+rules:
+  - name: DeviantArt Access Token
+    id: kingfisher.deviantart.1
+    pattern: |
+      (?xi)
+      \b(?:deviantart|deviant_art)
+      (?:.|[\n\r]){0,64}?
+      (?:access[_-]?token|token|secret|key)
+      (?:.|[\n\r]){0,32}?
+      \b
+      (
+        [a-zA-Z0-9]{40,80}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 3
+    min_entropy: 3.5
+    confidence: medium
+    examples:
+      - 'DEVIANTART_ACCESS_TOKEN=aB3cD4eF5gH6iJ7kL8mN9oP0qR1sT2uV3wX4yZ5a'
+      - 'deviantart_token: "kM2nO3pQ4rS5tU6vW7xY8zA9bC0dE1fG2hI3jK4l"'
+    references:
+      - https://www.deviantart.com/developers/http/v1/20210526
+    validation:
+      type: Http
+      content:
+        request:
+          method: POST
+          url: "https://www.deviantart.com/api/v1/oauth2/placebo"
+          headers:
+            Content-Type: "application/x-www-form-urlencoded"
+          body: "access_token={{ TOKEN }}"
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+    revocation:
+      type: Http
+      content:
+        request:
+          method: POST
+          url: "https://www.deviantart.com/oauth2/revoke"
+          headers:
+            Content-Type: "application/x-www-form-urlencoded"
+          body: "token={{ TOKEN }}"
+          response_matcher:
+            - report_response: true
+            - type: WordMatch
+              words:
+                - '"success"'
+                - "true"
+              match_all_words: true

@@ -1,0 +1,22 @@
+rules:
+  - name: New York Times API Key
+    id: kingfisher.nytimes.1
+    base_score: 25
+    pattern: |
+      (?xi)
+      (?:nytimes|new[- ]?york[- ]?times)
+      (?:.|[\n\r]){0,32}?
+      \b
+      (?P<token>
+        [a-z0-9_\-=]{32}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 2
+    min_entropy: 3.2
+    confidence: medium
+    examples:
+      - NYTIMES_API_KEY=abcd1234efgh5678ijkl9012mnop3456
+      - '"new-york-times": "zyxw9876vuts5432rqpo1098nmlk7654"'
+    references:
+      - https://developer.nytimes.com/

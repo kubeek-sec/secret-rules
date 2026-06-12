@@ -1,0 +1,176 @@
+rules:
+
+- name: GitHub Personal Access Token
+  id: np.github.1
+  base_score: 75
+  pattern: '\b(?P<token>ghp_[a-zA-Z0-9]{36})\b'
+
+  categories: [api, secret]
+
+  references:
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+  - https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
+
+  examples:
+  - 'GITHUB_KEY=ghp_XIxB7KMNdAr3zqWtQqhE94qglHqOzn1D1stg'
+  - "let g:gh_token='ghp_4U3LSowpDx8XvYE7A8GH56oxU5aWnY2mzIbV'"
+  - |
+      ## git devaloper settings
+      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
+
+
+- name: GitHub OAuth Access Token
+  id: np.github.2
+  base_score: 70
+  pattern: '\b(?P<token>gho_[a-zA-Z0-9]{36})\b'
+
+  categories: [api, secret]
+
+  references:
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
+  - https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
+
+  examples:
+  - '    "url": "git+https://FelipeMestre:gho_psT9pqNFsehnc4se0ZzzR0HBxapxZD35hNHi@github.com/gontarz/PW_2021_Website-FelipeMestre.git"'
+  - '    oauth_token: gho_fq75OMU7UVbS9pTZmoCCzJT6TM5d1w099FgG'
+
+
+- name: GitHub App Token
+  id: np.github.3
+  base_score: 85
+  # Note: `ghu_` prefix is for user-to-server tokens; `ghs_` is for server-to-server tokens
+  pattern: '\b(?P<token>(?:ghu|ghs)_[a-zA-Z0-9]{36})\b'
+
+  categories: [api, secret]
+
+  references:
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
+  - https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
+
+  examples:
+  - '            "token": "ghu_16C7e42F292c69C2E7C10c838347Ae178B4a",'
+  - |
+      Example usage:
+      git clone http://ghs_RguXIkihJjwHAP6eXEYxaPNvywurTr5IOAbg@github.com/username/repo.git
+
+
+- name: GitHub Refresh Token
+  id: np.github.4
+  base_score: 50
+  pattern: '\b(?P<token>ghr_[a-zA-Z0-9]{76})\b'
+
+  categories: [api, secret]
+
+  references:
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
+  - https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
+
+  examples:
+  - '    "refresh_token": "ghr_1B4a2e77838347a7E420ce178F2E7c6912E169246c3CE1ccbF66C46812d16D5B1A9Dc86A1498",'
+
+
+- name: GitHub Client ID
+  id: np.github.5
+  base_score: 15
+  pattern: |
+    (?x)(?i)
+    (?:github)
+    .?
+    (?: api | app | application | client | consumer | customer )?
+    .?
+    (?: id | identifier | key )
+    .{0,2} \s{0,20} .{0,2} \s{0,20} .{0,2}  (?# string terminators, whitespace, binding operators, etc )
+    \b (?P<client_id>[a-z0-9]{20}) \b
+
+  categories: [api, fuzzy, identifier]
+
+  references:
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
+
+  examples:
+  - |
+      GITHUB_CLIENT_ID=ac58d6da7d7a84c039b7
+      GITHUB_SECRET=37d02377a3e9d849e18704c3ec883f9c5787d857
+
+
+- name: GitHub Secret Key
+  id: np.github.6
+  base_score: 85
+  pattern: |
+    (?x)(?i)
+    github
+    .?
+    (?: api | app | application | client | consumer | customer | secret | key )
+    .?
+    (?: key | oauth | sec | secret )?
+    .{0,2} \s{0,20} .{0,2} \s{0,20} .{0,2}  (?# string terminators, whitespace, binding operators, etc )
+    \b (?P<secret>[a-z0-9]{40}) \b
+
+  categories: [api, fuzzy, secret]
+
+  references:
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
+
+  examples:
+  - |
+      GITHUB_CLIENT_ID=ac58d6da7d7a84c039b7
+      GITHUB_SECRET=37d02377a3e9d849e18704c3ec883f9c5787d857
+
+
+- name: GitHub App Installation Token (JWT format)
+  id: np.github.8
+  base_score: 85
+  # GitHub announced on April 24, 2026 that server-to-server installation tokens
+  # (ghs_ prefix) are transitioning to a new JWT-based format:
+  #   ghs_<APPID>_<JWT>
+  # where APPID is numeric and the JWT has three base64url-encoded dot-separated
+  # segments (header.payload.signature). Rollout began April 27, 2026 for
+  # GITHUB_TOKEN in Actions, expanding to all installation tokens mid-May to
+  # late June 2026. Affects GitHub.com (Cloud + Data Residency) only; GHES
+  # continues using the legacy ghs_[a-zA-Z0-9]{36} format (detected by np.github.3).
+  #
+  # Format: ghs_<numeric_app_id>_<base64url_header>.<base64url_payload>.<base64url_sig>
+  # Total length: ~520 chars (variable)
+  pattern: '\b(?P<token>ghs_[0-9]+_[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)\b'
+
+  categories: [api, secret]
+
+  references:
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://github.blog/changelog/2026-04-24-upcoming-format-change-for-github_token-and-installation-access-tokens/
+  - https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation
+
+  examples:
+  - 'ghs_123456_eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJhcHBfaWQiLCJpYXQiOjE3MTQyMDgwMDAsImV4cCI6MTcxNDIwODMwMH0.EXAMPLE_SIGNATURE_BASE64URL'
+  - 'GITHUB_TOKEN=ghs_98765_eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbnN0YWxsYXRpb25faWQiOjEyMzQ1Nn0.EXAMPLE_SIGNATURE_CHARS'
+
+  negative_examples:
+  - 'ghs_RguXIkihJjwHAP6eXEYxaPNvywurTr5IOAbg'  # Legacy format (36 chars, detected by np.github.3)
+  - 'ghs_abc_header.payload.sig'                  # Non-numeric app ID — not a valid JWT-format token
+  - 'ghs_123456_onlyone.part'                     # Only two dot-separated segments (JWT requires three)
+  - 'ghs_'                                        # Prefix only, no token body
+
+
+- name: GitHub Personal Access Token (fine-grained permissions)
+  id: np.github.7
+  base_score: 65
+  pattern: |
+    (?x)
+    \b
+    (?P<token>github_pat_[0-9a-zA-Z_]{82})
+    \b
+
+  categories: [api, secret]
+
+  references:
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github
+  - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+
+  examples:
+  - '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'

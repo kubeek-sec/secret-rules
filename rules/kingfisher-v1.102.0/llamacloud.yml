@@ -1,0 +1,34 @@
+rules:
+  - name: Llama Cloud API Key
+    id: kingfisher.llamacloud.1
+    pattern: |
+      (?x)
+      \b
+      (
+        llx-
+        [A-Za-z0-9]{44,52}
+      )
+      \b
+    pattern_requirements:
+      min_digits: 4
+    min_entropy: 3.5
+    confidence: high
+    examples:
+      - "LLAMA_CLOUD_API_KEY=llx-b3D8GhZgQ2iAY4qYvwueaOkedPrstZpASP4P4KrBaeeuR4CE"
+      - "llama_api_key = 'llx-M0nQ3rS9tU5xZ7aB2dE4fG6hI1jK8lN0oPqRsT4wXyZa'"
+    references:
+      - https://docs.llmapi.com/quickstart
+    validation:
+      type: Http
+      content:
+        request:
+          method: GET
+          url: https://api.cloud.llamaindex.ai/api/v1/projects
+          headers:
+            Authorization: "Bearer {{ TOKEN }}"
+            Accept: application/json
+          response_matcher:
+            - report_response: true
+            - type: StatusMatch
+              status: [200]
+            - type: JsonValid
