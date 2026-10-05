@@ -31,12 +31,13 @@ Additional guardrails baked in:
 ## Install / run
 
 No new dependencies — it uses the standard library plus PyYAML (already required
-by the project). Run it directly:
+by the project). Run it from the repo root with `uv`, which uses the project
+environment:
 
 ```sh
-python verify/verify.py <command> ...
-# or inside the project environment:
-uv run python verify/verify.py <command> ...
+uv run verify/verify.py <command> ...
+# or as a module:
+uv run python -m verify.verify <command> ...
 ```
 
 ## Commands
@@ -45,23 +46,23 @@ uv run python verify/verify.py <command> ...
 
 ```sh
 # Simple token providers
-python verify/verify.py check --topic github --secret ghp_xxx
-python verify/verify.py check --topic openai --secret sk-xxx
+uv run verify/verify.py check --topic github --secret ghp_xxx
+uv run verify/verify.py check --topic openai --secret sk-xxx
 
 # Read the secret from stdin or an env var (keeps it out of shell history / ps)
-echo "$TOKEN" | python verify/verify.py check --topic slack --secret-stdin
-python verify/verify.py check --topic stripe --secret-env STRIPE_KEY
+echo "$TOKEN" | uv run verify/verify.py check --topic slack --secret-stdin
+uv run verify/verify.py check --topic stripe --secret-env STRIPE_KEY
 
 # Multi-part credentials (companion via --id / --field / --session-token)
-python verify/verify.py check --topic aws    --id AKIA... --secret <secret-access-key>
-python verify/verify.py check --topic aws    --id ASIA... --secret <key> --session-token <tok>
-python verify/verify.py check --topic twilio --id AC...   --secret <auth-token>
+uv run verify/verify.py check --topic aws    --id AKIA... --secret <secret-access-key>
+uv run verify/verify.py check --topic aws    --id ASIA... --secret <key> --session-token <tok>
+uv run verify/verify.py check --topic twilio --id AC...   --secret <auth-token>
 
 # Let the tool guess the provider from the secret's shape
-python verify/verify.py check --secret xoxb-123...   # -> slack
+uv run verify/verify.py check --secret xoxb-123...   # -> slack
 
 # Preview without sending anything
-python verify/verify.py check --topic github --secret ghp_xxx --dry-run
+uv run verify/verify.py check --topic github --secret ghp_xxx --dry-run
 ```
 
 Statuses (aligned with Kingfisher's `validation.outcome` taxonomy):
@@ -88,7 +89,7 @@ Feed newline-delimited JSON, one finding per line:
 # {"topic":"github","secret":"ghp_..."}
 # {"uid":"aws-access-key-id","secret":"<sk>","id":"AKIA..."}
 # {"secret":"xoxb-..."}            # topic auto-detected from shape
-python verify/verify.py check --input findings.jsonl --json
+uv run verify/verify.py check --input findings.jsonl --json
 ```
 
 Each object needs a `secret` plus either `topic` or `uid` (or a recognizable
@@ -103,21 +104,21 @@ with `--base-url` (single topic) or `--endpoint TOPIC=URL` (batch, repeatable):
 
 ```sh
 # on-prem GitLab
-python verify/verify.py check --topic gitlab --secret glpat-... \
+uv run verify/verify.py check --topic gitlab --secret glpat-... \
     --base-url https://gitlab.corp.example.com
 
 # GitHub Enterprise (note the /api/v3 REST base)
-python verify/verify.py check --topic github --secret ghp_... \
+uv run verify/verify.py check --topic github --secret ghp_... \
     --base-url https://ghe.corp.example.com/api/v3
 
 # self-hosted Sentry / Gitea / Artifactory / Grafana, Jira Server/DC, Datadog EU …
-python verify/verify.py check --topic artifactory --secret <token> \
+uv run verify/verify.py check --topic artifactory --secret <token> \
     --base-url https://artifactory.corp.example.com
-python verify/verify.py check --topic datadog --secret <key> \
+uv run verify/verify.py check --topic datadog --secret <key> \
     --base-url https://api.datadoghq.eu
 
 # batch, per-topic
-python verify/verify.py check --input findings.jsonl \
+uv run verify/verify.py check --input findings.jsonl \
     --endpoint gitlab=https://gitlab.corp --endpoint sentry=https://sentry.corp
 # …or from a file:  --endpoint-config endpoints.yaml   # { endpoints: {gitlab: "https://…"} }
 ```
@@ -134,14 +135,14 @@ traffic:
 
 ```sh
 # JWT: decode, and check structure + exp/nbf expiry (and flag alg=none)
-python verify/verify.py check --topic jwt --secret eyJhbGciOiJIUzI1NiJ9....
+uv run verify/verify.py check --topic jwt --secret eyJhbGciOiJIUzI1NiJ9....
 #   expired/not-yet-valid -> inactive; well-formed -> locally-derived
 
 # Private keys: confirm a PEM block is a well-formed RSA/EC/OpenSSH/PKCS#8 key
-cat id_rsa | python verify/verify.py check --topic private --secret-stdin
+cat id_rsa | uv run verify/verify.py check --topic private --secret-stdin
 
 # DB / credential connection strings: parse and confirm embedded credentials
-python verify/verify.py check --topic postgres \
+uv run verify/verify.py check --topic postgres \
     --secret 'postgres://user:pass@db.corp:5432/app'
 ```
 
@@ -153,7 +154,7 @@ do **not** open a database connection (that needs the DB driver — see
 ### `rotate` — verify → revoke → (re)generate → install
 
 ```sh
-python verify/verify.py rotate --topic slack --secret xoxb-...
+uv run verify/verify.py rotate --topic slack --secret xoxb-...
 ```
 
 This (1) verifies the current secret, (2) shows how to revoke it, (3) helps you
@@ -164,9 +165,9 @@ endpoint (Slack `auth.revoke`, GitLab `DELETE …/self`, Dropbox
 `auth/token/revoke`), it can be performed here — destructive, so it asks first:
 
 ```sh
-python verify/verify.py rotate --topic slack --secret xoxb-... --execute        # prompts y/N
-python verify/verify.py rotate --topic slack --secret xoxb-... --execute --yes  # for automation
-python verify/verify.py rotate --topic slack --secret xoxb-... --execute --dry-run  # show, don't send
+uv run verify/verify.py rotate --topic slack --secret xoxb-... --execute        # prompts y/N
+uv run verify/verify.py rotate --topic slack --secret xoxb-... --execute --yes  # for automation
+uv run verify/verify.py rotate --topic slack --secret xoxb-... --execute --dry-run  # show, don't send
 ```
 
 **Produce the replacement.** Two cases:
@@ -182,10 +183,10 @@ python verify/verify.py rotate --topic slack --secret xoxb-... --execute --dry-r
 
 ```sh
 # generate a new JWT signing secret and write it into .env, logging the change
-python verify/verify.py rotate --topic jwt --generate --sink dotenv:./app.env#JWT_SECRET
+uv run verify/verify.py rotate --topic jwt --generate --sink dotenv:./app.env#JWT_SECRET
 
 # generate but just show it (no sink)
-python verify/verify.py rotate --topic generic --generate --show
+uv run verify/verify.py rotate --topic generic --generate --show
 ```
 
 For a self-controlled secret that isn't one of those topics, add
@@ -202,7 +203,7 @@ Once you've generated a new secret in the provider console, verify it works and
 write it to a destination ("sink") in one step:
 
 ```sh
-python verify/verify.py update --topic github --new-secret ghp_new \
+uv run verify/verify.py update --topic github --new-secret ghp_new \
     --sink dotenv:./.env#GITHUB_TOKEN
 ```
 
@@ -227,10 +228,10 @@ put-secret-value` wrapper.
 Draws from a CSPRNG (`secrets`). Size it by length or by target entropy:
 
 ```sh
-python verify/verify.py gen                         # ~256-bit, base62
-python verify/verify.py gen --bits 128 --charset hex
-python verify/verify.py gen --length 64 --charset base64url
-python verify/verify.py gen --count 3 --json        # values + their strength
+uv run verify/verify.py gen                         # ~256-bit, base62
+uv run verify/verify.py gen --bits 128 --charset hex
+uv run verify/verify.py gen --length 64 --charset base64url
+uv run verify/verify.py gen --count 3 --json        # values + their strength
 ```
 
 Charsets: `base62` (default), `alnum`, `hex`, `base64url`, `ascii`.
@@ -238,8 +239,8 @@ Charsets: `base62` (default), `alnum`, `hex`, `base64url`, `ascii`.
 ### `entropy` — evaluate a string
 
 ```sh
-python verify/verify.py entropy 'correct horse battery staple'
-echo -n "$CANDIDATE" | python verify/verify.py entropy --stdin --json
+uv run verify/verify.py entropy 'correct horse battery staple'
+echo -n "$CANDIDATE" | uv run verify/verify.py entropy --stdin --json
 ```
 
 It reports the observed **Shannon entropy** (bits/char), a **pool-based
@@ -270,8 +271,8 @@ recording for a run.
 ### `list` — coverage
 
 ```sh
-python verify/verify.py list          # table
-python verify/verify.py list --json
+uv run verify/verify.py list          # table
+uv run verify/verify.py list --json
 ```
 
 ## Supported providers
@@ -450,7 +451,7 @@ modern guidance (e.g. NIST SP 800-63B):
   (e.g. Have I Been Pwned's k-anonymity API) rather than imposing composition
   rules like "must contain a symbol".
 - **Machine secrets are not passwords.** They don't need to be memorable, so make
-  them maximal: `python verify/verify.py gen --bits 256`.
+  them maximal: `uv run verify/verify.py gen --bits 256`.
 
 ## Caveats
 

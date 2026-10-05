@@ -2,27 +2,27 @@
 """Verify, rotate, and re-install secrets detected by the secret-rules referential.
 
     # Is this secret live? (read-only — never triggers anything)
-    python verify/verify.py check --topic github --secret ghp_xxx
-    echo "$TOKEN" | python verify/verify.py check --topic slack --secret-stdin
+    uv run verify/verify.py check --topic github --secret ghp_xxx
+    echo "$TOKEN" | uv run verify/verify.py check --topic slack --secret-stdin
 
     # Multi-part credentials
-    python verify/verify.py check --topic aws --id AKIA... --secret <secret-access-key>
-    python verify/verify.py check --topic twilio --id AC... --secret <auth-token>
+    uv run verify/verify.py check --topic aws --id AKIA... --secret <secret-access-key>
+    uv run verify/verify.py check --topic twilio --id AC... --secret <auth-token>
 
     # Batch a scanner's output (one JSON object per line)
-    python verify/verify.py check --input findings.jsonl
+    uv run verify/verify.py check --input findings.jsonl
 
     # Remediation: show the rotation runbook (plan-only by default)
-    python verify/verify.py rotate --topic slack --secret xoxb-...
+    uv run verify/verify.py rotate --topic slack --secret xoxb-...
     #   ...and actually self-revoke the leaked token (destructive, asks first):
-    python verify/verify.py rotate --topic slack --secret xoxb-... --execute
+    uv run verify/verify.py rotate --topic slack --secret xoxb-... --execute
 
     # Install a freshly minted replacement and confirm it works
-    python verify/verify.py update --topic github --new-secret ghp_new \\
+    uv run verify/verify.py update --topic github --new-secret ghp_new \\
         --sink dotenv:./.env#GITHUB_TOKEN
 
     # What's covered?
-    python verify/verify.py list
+    uv run verify/verify.py list
 """
 
 from __future__ import annotations
@@ -326,7 +326,7 @@ def _place_new_value(args, topic, new_value, generated, extra, http):
     """Show / install the replacement. Returns (verified_status, installed_sink)."""
     if new_value is None:
         print("\n4. Install the new value:")
-        print(f"   python {_prog()} update --topic {topic} --new-secret <NEW> "
+        print(f"   uv run {_prog()} update --topic {topic} --new-secret <NEW> "
               f"--sink dotenv:./.env#VAR")
         return None, None
 
@@ -357,7 +357,7 @@ def _place_new_value(args, topic, new_value, generated, extra, http):
         print(f"   {new_value}")
     else:
         print(f"   {fingerprint(new_value)}  (pass --show to print it, or --sink to install)")
-    print(f"   install with: python {_prog()} update --topic {topic} "
+    print(f"   install with: uv run {_prog()} update --topic {topic} "
           f"--new-secret <NEW> --sink dotenv:./.env#VAR")
     return verified_status, None
 

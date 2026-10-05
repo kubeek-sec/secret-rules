@@ -35,6 +35,72 @@ uv run secret-rules generate --target gitleaks,yara --topics aws,github,slack
 uv run secret-rules topics
 ```
 
+Command options:
+
+| command    | option              | default                  | meaning                                           |
+|------------|---------------------|--------------------------|---------------------------------------------------|
+| `build`    | `--rules-dir DIR`   | `rules`                  | where the source rulesets live                    |
+| `build`    | `--out DIR`         | `referential`            | where `rules.yaml` / `topics.yaml` are written    |
+| `generate` | `--target LIST`     | `all`                    | comma-separated targets (`gitleaks`, `betterleaks`, `kingfisher`, `noseyparker`, `titus`, `trufflehog`, `yara`) |
+| `generate` | `--topics LIST`     | all topics               | comma-separated topics to include                 |
+| `generate` | `--referential FILE`| `referential/rules.yaml` | referential to generate from                      |
+| `generate` | `--out-dir DIR`     | `configs`                | where configs are written                         |
+| `topics`   | `--referential FILE`| `referential/rules.yaml` | referential to list topics from                   |
+
+`generate` reports, per target, how many rules were skipped as incompatible
+with that engine (see [Target-specific compatibility](#target-specific-compatibility)).
+
+## Verifying & rotating findings (`verify/`)
+
+The scanners tell you a string *looks like* a secret; the companion
+[`verify/`](verify/README.md) tool tells you whether it is **actually live**
+and helps you **remediate** it. It uses only the standard library plus PyYAML.
+
+```sh
+# is this secret live? (read-only endpoints only; --dry-run sends nothing)
+uv run verify/verify.py check --topic github --secret ghp_xxx
+uv run verify/verify.py check --topic aws --id AKIA... --secret <secret-access-key>
+
+# batch a scanner's findings (JSONL: {"topic"|"uid", "secret", ...})
+uv run verify/verify.py check --input findings.jsonl --json --only-active
+
+# remediation runbook / self-revoke (plan-only unless --execute)
+uv run verify/verify.py rotate --topic slack --secret xoxb-...
+
+# verify a freshly minted replacement and install it
+uv run verify/verify.py update --topic github --new-secret ghp_new --sink dotenv:./.env#GITHUB_TOKEN
+
+# generate a strong secret / evaluate a string's entropy
+uv run verify/verify.py gen --bits 256
+uv run verify/verify.py entropy 'correct horse battery staple'
+
+# coverage
+uv run verify/verify.py list
+```
+
+Highlights:
+
+- **`check`** — live verifiers for 57 topics (GitHub, AWS SigV4, Slack, Stripe,
+  OpenAI, Anthropic, GitLab, …), Kingfisher-style statuses (`active`,
+  `inactive`, `locally-derived`, `invalid-material`, `unknown`, `unsupported`,
+  `skipped`), provider auto-detection from the secret's shape, self-hosted
+  endpoints (`--base-url`, `--endpoint`, `--endpoint-config`, `--insecure`),
+  rate limiting (`--rps`), and **offline** validation of JWTs, private keys and
+  credential connection strings.
+- **`rotate`** — verify → revoke (self-revoke for Slack/GitLab/Dropbox) →
+  replace (`--generate` for self-minted secrets such as Django/Rails/JWT keys)
+  → install via a sink.
+- **`update`** — installs a new secret into a sink (`stdout`, `file:`,
+  `dotenv:`, `exec:`) only if it verifies as active.
+- **`gen` / `entropy`** — CSPRNG secret generation and Shannon / pool-based
+  entropy evaluation.
+- **Audit ledger** — every change is appended to `secret-rotations.jsonl`
+  (git-ignored, mode `0600`, fingerprints only by default).
+
+Secrets are never followed across redirects and are only ever printed as
+fingerprints unless explicitly requested. See [verify/README.md](verify/README.md)
+for the full reference, the provider table, and how to add a verifier.
+
 ## The referential
 
 `referential/rules.yaml` holds every rule with a canonical regex and merged
@@ -110,6 +176,12 @@ functional checks: every rule's positive examples must match its canonical
 pattern, and the generated YARA ruleset must compile with the real `yara`
 binary and detect a planted AWS key (skipped when `yara` is not installed).
 
+`tests/test_verify.py` covers the `verify/` tool without any network access
+(a fake HTTP client): verifier outcomes per provider, AWS SigV4 signing,
+self-revoke, shape sniffing, custom endpoints, offline JWT / private-key /
+connection-URI validation, sinks, secret generation and entropy, and the audit
+ledger.
+
 ## Layout
 
 ```
@@ -120,6 +192,8 @@ secret_rules/
   referential.py      # merge + dedup + rules.yaml/topics.yaml I/O
   generators/         # the 7 output targets
   cli.py              # build / generate / topics commands
+verify/               # live verification, rotation, entropy (see verify/README.md)
+rules/                # vendored source rulesets, one directory per scanner version
 referential/          # generated referential (committed)
 configs/              # generated scanner configs
 tests/
