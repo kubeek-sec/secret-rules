@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# verify/ rotation audit ledger — may contain sensitive material, never commit
+secret-rotations.jsonl
+*.rotations.jsonl
